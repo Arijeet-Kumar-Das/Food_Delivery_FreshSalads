@@ -108,7 +108,7 @@ const HomePage = () => {
                         veggies
                       </p>
                       <div className="flex justify-between items-center">
-                        <span className="text-2xl font-bold">$24.99</span>
+                        <span className="text-2xl font-bold">Rs 299</span>
                         <motion.button
                           whileHover={{ scale: 1.05 }}
                           whileTap={{ scale: 0.95 }}

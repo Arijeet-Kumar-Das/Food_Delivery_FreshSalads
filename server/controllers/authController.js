@@ -23,9 +23,22 @@ exports.register = async (req, res) => {
       [name, email, phone, hashedPassword]
     );
 
+    // Generate JWT token for the new user
+    const token = jwt.sign(
+      { userId: result.insertId, email: email },
+      process.env.JWT_SECRET,
+      { expiresIn: "1h" }
+    );
+
     res.status(201).json({
-      message: "User registered",
-      userId: result.insertId,
+      message: "User registered successfully",
+      user: {
+        id: result.insertId,
+        name,
+        email,
+        phone,
+      },
+      token, // Make sure to include the token!
     });
   } catch (err) {
     res.status(500).json({ error: "Server error" });
@@ -33,6 +46,7 @@ exports.register = async (req, res) => {
 };
 
 // Login user (direct SQL)
+// Updated login controller in authController.js
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -51,6 +65,14 @@ exports.login = async (req, res) => {
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
+    // Get user's default address
+    const [addresses] = await pool.query(
+      `SELECT * FROM addresses 
+       WHERE user_id = ? AND is_default = TRUE 
+       LIMIT 1`,
+      [user[0].id]
+    );
+
     // Generate JWT
     const token = jwt.sign(
       { userId: user[0].id, email: user[0].email },
@@ -64,6 +86,7 @@ exports.login = async (req, res) => {
         id: user[0].id,
         name: user[0].name,
         email: user[0].email,
+        defaultAddressId: addresses[0]?.id || null,
       },
     });
   } catch (err) {

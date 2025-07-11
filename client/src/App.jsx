@@ -5,6 +5,10 @@ import LoginPage from "./pages/LoginPage";
 import "./App.css";
 import RegisterPage from "./pages/RegisterPage";
 import MenuPage from "./pages/MenuPage";
+import AddAddress from "./pages/AddAddress";
+import AddressPage from "../src/pages/AddressPage";
+import CartPage from "./pages/CartPage";
+import OrderDetails from "./pages/OrderDetails";
 
 function App() {
   return (
@@ -14,6 +18,10 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/menu" element={<MenuPage />} />
+        <Route path="/add-address" element={<AddAddress />} />
+        <Route path="/address" element={<AddressPage />} />
+        <Route path="/cart" element={<CartPage />} />
+        <Route path="/order/:orderId" element={<OrderDetails />} />
       </Routes>
     </Router>
   );

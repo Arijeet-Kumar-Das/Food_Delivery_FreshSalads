@@ -10,9 +10,11 @@ import {
 import { useSelector, useDispatch } from "react-redux";
 import { logout } from "../store/authSlice";
 import { useNavigate, Link } from "react-router-dom";
+import { selectCartCount } from "../store/cartSlice"; // Import the selector
 
 const Navbar2 = () => {
   const { isAuthenticated } = useSelector((state) => state.auth);
+  const cartCount = useSelector(selectCartCount); // Get cart count from Redux
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -45,11 +47,11 @@ const Navbar2 = () => {
             </span>
           </div>
 
-          {/* Right side icons (same functionality) */}
+          {/* Right side icons */}
           <div className="flex items-center space-x-4">
             <button
               className="p-2 text-gray-600 hover:text-green-600"
-              onClick={() => console.log("Search clicked")} // Add search functionality
+              onClick={() => console.log("Search clicked")}
             >
               <FaSearch />
             </button>
@@ -90,9 +92,11 @@ const Navbar2 = () => {
               onClick={() => navigate("/cart")}
             >
               <FaShoppingCart />
-              <span className="absolute -top-1 -right-1 bg-green-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                3 {/* Replace with dynamic count later */}
-              </span>
+              {cartCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-green-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                  {cartCount}
+                </span>
+              )}
             </button>
           </div>
         </div>

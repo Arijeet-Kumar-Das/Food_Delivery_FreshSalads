@@ -45,7 +45,12 @@ const RegisterPage = () => {
         })
       );
 
-      navigate("/");
+      navigate("/add-address", {
+        state: {
+          postRegistration: true,
+          message: "Let's add your first address to get started!",
+        },
+      });
     } catch (err) {
       setError(err.response?.data?.error || "Registration failed");
     } finally {

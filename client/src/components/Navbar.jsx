@@ -11,6 +11,7 @@ import { Link } from "react-scroll";
 import { useSelector, useDispatch } from "react-redux";
 import { logout } from "../store/authSlice";
 import { useNavigate } from "react-router-dom";
+import { Link as RouteLink } from "react-router-dom";
 
 const Navbar = () => {
   const { isAuthenticated } = useSelector((state) => state.auth);
@@ -59,14 +60,12 @@ const Navbar = () => {
             >
               Home
             </Link>
-            <Link
-              to="menu"
-              smooth={true}
-              duration={500}
+            <RouteLink
+              to="/menu"
               className="text-gray-600 hover:text-green-600 cursor-pointer"
             >
               Menu
-            </Link>
+            </RouteLink>
             <Link
               to="about"
               smooth={true}

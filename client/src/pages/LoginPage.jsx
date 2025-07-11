@@ -23,12 +23,20 @@ const LoginPage = () => {
 
     try {
       const response = await API.post("/auth/login", { email, password });
+
+      // Updated to match the new authSlice structure
       dispatch(
         setCredentials({
-          user: response.data.user,
+          user: {
+            id: response.data.user.id,
+            name: response.data.user.name,
+            email: response.data.user.email,
+            defaultAddressId: response.data.user.defaultAddressId, // Added address ID
+          },
           token: response.data.token,
         })
       );
+
       navigate("/"); // Redirect to home after successful login
     } catch (err) {
       setError(err.response?.data?.error || "Login failed. Please try again.");
