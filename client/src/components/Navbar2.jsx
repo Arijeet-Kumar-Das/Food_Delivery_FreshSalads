@@ -5,6 +5,8 @@ import {
   FaUser,
   FaSearch,
   FaUserCircle,
+  FaClipboardList,
+  FaLifeRing,
   FaSignOutAlt,
 } from "react-icons/fa";
 import { useSelector, useDispatch } from "react-redux";
@@ -55,6 +57,23 @@ const Navbar2 = () => {
             >
               <FaSearch />
             </button>
+
+            {isAuthenticated && (
+              <>
+                <button
+                  className="p-2 text-gray-600 hover:text-green-600"
+                  onClick={() => navigate("/orders")}
+                >
+                  <FaClipboardList />
+                </button>
+                <button
+                  className="p-2 text-gray-600 hover:text-green-600"
+                  onClick={() => navigate("/support")}
+                >
+                  <FaLifeRing />
+                </button>
+              </>
+            )}
 
             {isAuthenticated ? (
               <div className="relative">

@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import API from "../utils/api";
 import Navbar2 from "../components/Navbar2";
 import { motion } from "framer-motion";
+import StarRating from "../components/StarRating";
 import { toast } from "react-toastify";
 
 const statusColors = {
@@ -15,6 +16,7 @@ const OrderDetails = () => {
   const { orderId } = useParams();
   const navigate = useNavigate();
   const [order, setOrder] = useState(null);
+  const [ratings, setRatings] = useState({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -22,6 +24,24 @@ const OrderDetails = () => {
       try {
         const res = await API.get(`/orders/${orderId}`);
         setOrder(res.data);
+          // if delivered, fetch existing ratings per food
+          if (res.data.status === "delivered" && res.data.items) {
+            const fetchRatings = async () => {
+              const map = {};
+              await Promise.all(
+                res.data.items.map(async (it) => {
+                  try {
+                    const r = await API.get(`/foods/${it.food_id || it.id}/rating`);
+                    map[it.food_id || it.id] = r.data.rating || 0;
+                  } catch (_) {
+                    map[it.food_id || it.id] = 0;
+                  }
+                })
+              );
+              setRatings(map);
+            };
+            fetchRatings();
+          }
       } catch (err) {
         toast.error("Could not fetch order details.");
         navigate("/orders");
@@ -118,9 +138,25 @@ const OrderDetails = () => {
                     <div className="font-semibold text-gray-900">
                       {item.food_name}
                     </div>
-                    <div className="text-gray-600 text-sm">
+                    <div className="text-gray-600 text-sm mb-1">
                       Qty: {item.quantity}
                     </div>
+                    {order.status === "delivered" && (
+                      <StarRating
+                        value={ratings[item.food_id || item.id] || 0}
+                        editable={true}
+                        onChange={async (val) => {
+                          try {
+                            await API.post(`/foods/${item.food_id || item.id}/rate`, { rating: val });
+                            setRatings({ ...ratings, [item.food_id || item.id]: val });
+                            toast.success("Thanks for rating!");
+                          } catch (err) {
+                            toast.error(err.response?.data?.error || "Rating failed");
+                          }
+                        }}
+                        size="text-base"
+                      />
+                    )}
                   </div>
                   <div className="text-right">
                     <div className="font-bold text-green-700">

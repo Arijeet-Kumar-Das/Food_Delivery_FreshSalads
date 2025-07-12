@@ -46,6 +46,65 @@ exports.updateFood = async (req, res) => {
 };
 
 // Delete food item (soft delete)
+// Rate a food item
+exports.rateFood = async (req, res) => {
+  try {
+    const { id } = req.params; // food id
+    const userId = req.user.userId || req.user.id;
+    const { rating } = req.body;
+
+    if (!rating || rating < 1 || rating > 5) {
+      return res.status(400).json({ error: "Rating must be 1-5" });
+    }
+
+    // Check delivered order contains this food for this user
+    const [rows] = await pool.query(
+      `SELECT 1 FROM orders o
+       JOIN order_items oi ON o.id = oi.order_id
+       WHERE o.user_id = ? AND oi.food_id = ? AND o.status IN ('delivered','completed')
+       LIMIT 1`,
+      [userId, id]
+    );
+    if (rows.length === 0) {
+      return res
+        .status(400)
+        .json({ error: "You can rate only after delivery" });
+    }
+
+    // Insert or update rating
+    const [existing] = await pool.query(
+      "SELECT id FROM food_ratings WHERE user_id = ? AND food_id = ?",
+      [userId, id]
+    );
+    if (existing.length === 0) {
+      await pool.query(
+        "INSERT INTO food_ratings (user_id, food_id, rating) VALUES (?,?,?)",
+        [userId, id, rating]
+      );
+    } else {
+      await pool.query(
+        "UPDATE food_ratings SET rating = ? WHERE id = ?",
+        [rating, existing[0].id]
+      );
+    }
+
+    // Recalculate average
+    const [[avgRow]] = await pool.query(
+      "SELECT AVG(rating) as avg, COUNT(*) as cnt FROM food_ratings WHERE food_id = ?",
+      [id]
+    );
+    await pool.query(
+      "UPDATE foods SET rating_average = ?, rating_count = ? WHERE id = ?",
+      [avgRow.avg, avgRow.cnt, id]
+    );
+
+    res.json({ ratingAverage: avgRow.avg, ratingCount: avgRow.cnt });
+  } catch (err) {
+    console.error("Rate food error", err);
+    res.status(500).json({ error: "Failed to rate food" });
+  }
+};
+
 exports.deleteFood = async (req, res) => {
   try {
     const { id } = req.params;
@@ -53,5 +112,21 @@ exports.deleteFood = async (req, res) => {
     res.json({ message: "Food item deleted" });
   } catch (err) {
     res.status(500).json({ error: "Failed to delete food item" });
+  }
+};
+
+// Get current user's rating for a food
+exports.getUserRating = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.userId || req.user.id;
+    const [[row]] = await pool.query(
+      "SELECT rating FROM food_ratings WHERE user_id = ? AND food_id = ?",
+      [userId, id]
+    );
+    res.json({ rating: row ? row.rating : 0 });
+  } catch (err) {
+    console.error("Get rating error", err);
+    res.status(500).json({ error: "Failed to fetch rating" });
   }
 };

@@ -25,6 +25,7 @@ const LoginPage = () => {
       const response = await API.post("/auth/login", { email, password });
 
       // Updated to match the new authSlice structure
+      const isAdminUser = response.data.user.isAdmin;
       dispatch(
         setCredentials({
           user: {
@@ -37,7 +38,11 @@ const LoginPage = () => {
         })
       );
 
-      navigate("/"); // Redirect to home after successful login
+      if (isAdminUser) {
+        navigate("/admin");
+      } else {
+        navigate("/");
+      } // Redirect to home after successful login
     } catch (err) {
       setError(err.response?.data?.error || "Login failed. Please try again.");
     } finally {

@@ -6,6 +6,8 @@ const addressRoutes = require("./routes/addressRoutes");
 const categoryRoutes = require("./routes/categoryRoutes");
 const foodRoutes = require("./routes/foodRoutes");
 const orderRoutes = require("./routes/orderRoutes");
+const supportRoutes = require("./routes/supportRoutes");
+const adminRoutes = require("./routes/adminRoutes");
 
 // Import order controller for payment routes
 const orderController = require("./controllers/orderController");
@@ -24,6 +26,8 @@ app.use("/api/addresses", addressRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/foods", foodRoutes);
 app.use("/api/orders", orderRoutes);
+app.use("/api/support", supportRoutes);
+app.use("/api/admin", adminRoutes);
 
 // Razorpay payment routes (matching your frontend API calls)
 app.post(

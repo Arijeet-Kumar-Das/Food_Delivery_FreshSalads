@@ -5,6 +5,7 @@ const initialState = {
   user: null,
   token: localStorage.getItem("token") || null,
   isAuthenticated: !!localStorage.getItem("token"),
+  isAdmin: false,
   status: "idle", // 'idle' | 'loading' | 'succeeded' | 'failed'
   error: null,
 };
@@ -23,6 +24,7 @@ const authSlice = createSlice({
       };
       state.token = token;
       state.isAuthenticated = true;
+      state.isAdmin = !!user.isAdmin;
       state.status = "succeeded";
       localStorage.setItem("token", token);
     },
@@ -30,6 +32,7 @@ const authSlice = createSlice({
       state.user = null;
       state.token = null;
       state.isAuthenticated = false;
+      state.isAdmin = false;
       state.status = "idle";
       localStorage.removeItem("token");
     },
@@ -47,6 +50,7 @@ export const { setCredentials, logout, setDefaultAddress } = authSlice.actions;
 export const selectCurrentUser = (state) => state.auth.user;
 export const selectCurrentToken = (state) => state.auth.token;
 export const selectIsAuthenticated = (state) => state.auth.isAuthenticated;
+export const selectIsAdmin = (state) => state.auth.isAdmin;
 export const selectDefaultAddressId = (state) =>
   state.auth.user?.defaultAddressId || null;
 

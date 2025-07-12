@@ -9,6 +9,9 @@ import AddAddress from "./pages/AddAddress";
 import AddressPage from "../src/pages/AddressPage";
 import CartPage from "./pages/CartPage";
 import OrderDetails from "./pages/OrderDetails";
+import OrderHistory from "./pages/OrderHistory";
+import AdminDashboardRoutes from "./pages/AdminDashboard";
+import SupportPage from "./pages/SupportPage";
 
 function App() {
   return (
@@ -21,7 +24,10 @@ function App() {
         <Route path="/add-address" element={<AddAddress />} />
         <Route path="/address" element={<AddressPage />} />
         <Route path="/cart" element={<CartPage />} />
+        <Route path="/orders" element={<OrderHistory />} />
+        <Route path="/support" element={<SupportPage />} />
         <Route path="/order/:orderId" element={<OrderDetails />} />
+        <Route path="/admin/*" element={<AdminDashboardRoutes />} />
       </Routes>
     </Router>
   );

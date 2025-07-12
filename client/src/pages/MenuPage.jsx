@@ -10,6 +10,7 @@ import {
 import api from "../utils/api";
 import Navbar2 from "../components/Navbar2";
 import Footer from "../components/Footer";
+import StarRating from "../components/StarRating";
 import {
   FaLeaf,
   FaStar,
@@ -60,7 +61,7 @@ const MenuPage = () => {
               "Other",
             description: food.description,
             price: food.price,
-            rating: food.rating || 4.5,
+            rating: Number(food.rating_average) || 0,
             isFavorite: false,
             image: `/assets/${food.image_url}`,
           }))
@@ -287,9 +288,6 @@ const MenuPage = () => {
                     <h3 className="text-lg font-bold text-gray-900 line-clamp-1">
                       {item.name}
                     </h3>
-                    <span className="text-lg font-bold text-green-600 whitespace-nowrap">
-                      Rs {item.price}
-                    </span>
                   </div>
 
                   <p className="text-gray-600 text-sm mb-4 line-clamp-2">
