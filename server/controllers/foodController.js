@@ -105,6 +105,24 @@ exports.rateFood = async (req, res) => {
   }
 };
 
+// Get add-ons available for a given food
+exports.getFoodAddons = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const [addons] = await pool.query(
+      `SELECT a.id, a.name, a.price
+       FROM addons a
+       JOIN food_addons fa ON fa.addon_id = a.id
+       WHERE fa.food_id = ? AND a.is_active = 1`,
+      [id]
+    );
+    res.json(addons);
+  } catch (err) {
+    console.error("Fetch add-ons error", err);
+    res.status(500).json({ error: "Failed to fetch add-ons" });
+  }
+};
+
 exports.deleteFood = async (req, res) => {
   try {
     const { id } = req.params;

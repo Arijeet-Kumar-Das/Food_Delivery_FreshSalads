@@ -9,6 +9,7 @@ router.put("/:id", authMiddleware.authenticate, foodController.updateFood);
 router.post("/:id/rate", authMiddleware.authenticate, foodController.rateFood);
 router.get("/:id/rating", authMiddleware.authenticate, foodController.getUserRating);
 router.put("/:id", authMiddleware.authenticate, foodController.updateFood);
+router.get("/:id/addons", foodController.getFoodAddons);
 router.delete("/:id", authMiddleware.authenticate, foodController.deleteFood);
 
 module.exports = router;

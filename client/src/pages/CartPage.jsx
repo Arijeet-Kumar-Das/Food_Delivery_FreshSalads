@@ -175,6 +175,7 @@ const CartPage = () => {
         items: cartItems.map((item) => ({
           food_id: item.id,
           quantity: item.quantity,
+          addons: (item.addons || []).map((ad) => ({ id: ad.id, price: ad.price })),
         })),
         delivery_address_id: user.defaultAddressId || 1,
       };
@@ -295,9 +296,14 @@ const CartPage = () => {
                         <div className="w-2/3 p-6">
                           <div className="flex justify-between items-start">
                             <div>
-                              <h3 className="text-xl font-bold text-gray-900">
-                                {item.name}
-                              </h3>
+                              <p className="font-medium text-gray-800">{item.name}</p>
+                              {item.addons && item.addons.length > 0 && (
+                                <ul className="text-xs text-gray-500 list-disc ml-4 mt-1 space-y-0.5">
+                                  {item.addons.map((ad) => (
+                                    <li key={ad.id}>{ad.name} (+₹{ad.price})</li>
+                                  ))}
+                                </ul>
+                              )}
                               <p className="text-gray-600 text-sm mt-1">
                                 {item.description}
                               </p>

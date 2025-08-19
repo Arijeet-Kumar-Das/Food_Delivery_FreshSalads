@@ -141,6 +141,13 @@ const OrderDetails = () => {
                     <div className="text-gray-600 text-sm mb-1">
                       Qty: {item.quantity}
                     </div>
+                    {item.addons && item.addons.length > 0 && (
+                      <ul className="text-xs text-gray-500 list-disc ml-4 space-y-0.5">
+                        {item.addons.map((ad, idx) => (
+                          <li key={idx}>{ad.name} (+₹{ad.price})</li>
+                        ))}
+                      </ul>
+                    )}
                     {order.status === "delivered" && (
                       <StarRating
                         value={ratings[item.food_id || item.id] || 0}

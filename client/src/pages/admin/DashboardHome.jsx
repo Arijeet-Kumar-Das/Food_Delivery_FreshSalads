@@ -29,6 +29,7 @@ const StatCard = ({ icon: Icon, label, value, color, delay }) => (
   </motion.div>
 );
 
+// Status color mapping for order status badge
 const statusColors = {
   pending: "bg-yellow-100 text-yellow-700",
   completed: "bg-green-100 text-green-700",
@@ -106,7 +107,7 @@ const DashboardHome = () => {
         />
       </div>
 
-      {/* Recent orders */}
+      {/* Recent Orders */}
       <motion.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
@@ -125,17 +126,17 @@ const DashboardHome = () => {
           <table className="min-w-full text-sm">
             <thead>
               <tr className="bg-green-100 text-green-900">
-                <th className="p-4 font-semibold">ID</th>
-                <th className="p-4 font-semibold">User</th>
-                <th className="p-4 font-semibold">Amount</th>
-                <th className="p-4 font-semibold">Status</th>
-                <th className="p-4 font-semibold">Date</th>
+                <th className="px-6 py-4 font-semibold text-left align-middle">ID</th>
+                <th className="px-6 py-4 font-semibold text-left align-middle">User</th>
+                <th className="px-6 py-4 font-semibold text-right align-middle">Amount</th>
+                <th className="px-6 py-4 font-semibold text-center align-middle">Status</th>
+                <th className="px-6 py-4 font-semibold text-left align-middle">Date</th>
               </tr>
             </thead>
             <tbody>
               {recentOrders.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="p-8 text-center text-gray-400">
+                  <td colSpan={5} className="p-8 text-center text-gray-400 align-middle">
                     No recent orders found.
                   </td>
                 </tr>
@@ -147,12 +148,12 @@ const DashboardHome = () => {
                     idx % 2 === 0 ? "bg-green-50" : "bg-white"
                   } border-b hover:bg-green-100 transition`}
                 >
-                  <td className="p-4">{o.id}</td>
-                  <td className="p-4">{o.user_name}</td>
-                  <td className="p-4 font-semibold text-green-700">
+                  <td className="px-6 py-4 align-middle">{o.id}</td>
+                  <td className="px-6 py-4 align-middle">{o.user_name}</td>
+                  <td className="px-6 py-4 align-middle text-right font-semibold text-green-700">
                     ₹{Number(o.total_amount).toFixed(2)}
                   </td>
-                  <td className="p-4">
+                  <td className="px-6 py-4 align-middle text-center">
                     <span
                       className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${
                         statusColors[o.status?.toLowerCase()] ||
@@ -162,7 +163,7 @@ const DashboardHome = () => {
                       {o.status}
                     </span>
                   </td>
-                  <td className="p-4">
+                  <td className="px-6 py-4 align-middle">
                     {new Date(o.created_at).toLocaleDateString()}
                   </td>
                 </tr>

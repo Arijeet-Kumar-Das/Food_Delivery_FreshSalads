@@ -9,10 +9,13 @@ import {
   FaBuilding,
   FaMapMarkerAlt,
 } from "react-icons/fa";
+import { useDispatch } from "react-redux";
+import { setDefaultAddress } from "../store/authSlice";
 import API from "../utils/api";
 import AddressForm from "./AddressForm";
 
 const AddressList = ({ onSelect }) => {
+  const dispatch = useDispatch();
   const [addresses, setAddresses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -48,7 +51,10 @@ const AddressList = ({ onSelect }) => {
 
   const handleSetDefault = async (id) => {
     try {
-      await API.put(`/addresses/default/${id}`);
+      const response = await API.put(`/addresses/default/${id}`);
+      // Update global state with the new default address ID
+      dispatch(setDefaultAddress(id));
+      // Refresh the addresses list
       fetchAddresses();
     } catch (err) {
       setError("Failed to set default address");

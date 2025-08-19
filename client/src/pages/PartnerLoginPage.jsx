@@ -1,55 +1,29 @@
-import React, { useState } from "react";
-import { motion } from "framer-motion";
-import { FaLeaf, FaArrowLeft } from "react-icons/fa";
-import { useDispatch } from "react-redux";
-import { setCredentials } from "../store/authSlice";
-import { clearCart } from "../store/cartSlice";
+import React, { useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { partnerLogin } from "../store/partnerAuthSlice";
 import { useNavigate } from "react-router-dom";
-import API from "../utils/api";
-import { FaEye, FaEyeSlash } from "react-icons/fa";
+import { motion } from "framer-motion";
+import { FaArrowLeft } from "react-icons/fa";
+import { FaEye, FaEyeSlash, FaMotorcycle } from "react-icons/fa";
 
-const LoginPage = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+const PartnerLoginPage = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { isAuthenticated, status, error } = useSelector(
+    (state) => state.partnerAuth
+  );
+
+  const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleSubmit = async (e) => {
+  useEffect(() => {
+    if (isAuthenticated) navigate("/partner/dashboard");
+  }, [isAuthenticated, navigate]);
+
+  const handleSubmit = (e) => {
     e.preventDefault();
-    setIsLoading(true);
-    setError("");
-
-    try {
-      const response = await API.post("/auth/login", { email, password });
-
-      // Updated to match the new authSlice structure
-      const isAdminUser = response.data.user.isAdmin;
-      dispatch(clearCart());
-      dispatch(
-        setCredentials({
-          user: {
-            id: response.data.user.id,
-            name: response.data.user.name,
-            email: response.data.user.email,
-            defaultAddressId: response.data.user.defaultAddressId, // Added address ID
-          },
-          token: response.data.token,
-        })
-      );
-
-      if (isAdminUser) {
-        navigate("/admin");
-      } else {
-        navigate("/");
-      } // Redirect to home after successful login
-    } catch (err) {
-      setError(err.response?.data?.error || "Login failed. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
+    dispatch(partnerLogin({ phone, password }));
   };
 
   return (
@@ -67,19 +41,19 @@ const LoginPage = () => {
         className="w-full max-w-md bg-white/80 backdrop-blur-md rounded-3xl shadow-2xl p-8"
       >
         <div className="flex items-center justify-center text-green-600 text-[1.7rem] sm:text-2xl md:text-3xl font-bold mb-6">
-          <FaLeaf className="mr-2" />
-          FreshSalads
+          <FaMotorcycle className="mr-2" />
+          Delivery Partner Login
         </div>
 
         <h2 className="text-2xl font-semibold text-gray-800 mb-6 text-center">
           Welcome Back 👋
         </h2>
 
-        {error && (
+        {status === "failed" && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg text-sm"
+            className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg text-sm text-center"
           >
             {error}
           </motion.div>
@@ -87,21 +61,19 @@ const LoginPage = () => {
 
         <form className="space-y-5" onSubmit={handleSubmit}>
           <div>
-            <label className="text-gray-700 font-medium text-sm">Email</label>
+            <label className="text-gray-700 font-medium text-sm">Phone</label>
             <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
+              type="text"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="e.g. 9876543210"
               className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-400"
               required
             />
           </div>
 
           <div className="relative">
-            <label className="text-gray-700 font-medium text-sm">
-              Password
-            </label>
+            <label className="text-gray-700 font-medium text-sm">Password</label>
             <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
@@ -115,6 +87,7 @@ const LoginPage = () => {
                 type="button"
                 className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
                 onClick={() => setShowPassword((prev) => !prev)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
               >
                 {showPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
               </button>
@@ -125,12 +98,12 @@ const LoginPage = () => {
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}
             type="submit"
-            disabled={isLoading}
+            disabled={status === "loading"}
             className={`w-full ${
-              isLoading ? "bg-green-500" : "bg-green-600 hover:bg-green-700"
+              status === "loading" ? "bg-green-500" : "bg-green-600 hover:bg-green-700"
             } text-white py-2.5 rounded-xl text-lg font-medium transition-all duration-300 flex items-center justify-center`}
           >
-            {isLoading ? (
+            {status === "loading" ? (
               <>
                 <svg
                   className="animate-spin -ml-1 mr-2 h-5 w-5 text-white"
@@ -159,19 +132,9 @@ const LoginPage = () => {
             )}
           </motion.button>
         </form>
-
-        <div className="text-center mt-4 text-sm text-gray-600">
-          Don't have an account?{" "}
-          <span
-            onClick={() => navigate("/register")}
-            className="text-green-600 font-semibold cursor-pointer hover:underline"
-          >
-            Sign Up
-          </span>
-        </div>
       </motion.div>
     </div>
   );
 };
 
-export default LoginPage;
+export default PartnerLoginPage;

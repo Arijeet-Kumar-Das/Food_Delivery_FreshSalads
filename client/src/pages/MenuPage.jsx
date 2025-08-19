@@ -11,6 +11,7 @@ import api from "../utils/api";
 import Navbar2 from "../components/Navbar2";
 import Footer from "../components/Footer";
 import StarRating from "../components/StarRating";
+import AddonSelector from "../components/AddonSelector";
 import {
   FaLeaf,
   FaStar,
@@ -29,6 +30,8 @@ const MenuPage = () => {
   const [error, setError] = useState(null);
   const [activeCategory, setActiveCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
+  const [showAddonModal, setShowAddonModal] = useState(false);
+  const [selectedFoodId, setSelectedFoodId] = useState(null);
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -94,16 +97,25 @@ const MenuPage = () => {
   };
 
   const handleAddToCart = (item) => {
+    setSelectedFoodId(item.id);
+    setShowAddonModal(true);
+  };
+
+  const confirmAddons = (addons) => {
+    const food = menuItems.find((m) => m.id === selectedFoodId);
+    if (!food) return;
     dispatch(
       addItem({
-        id: item.id,
-        name: item.name,
-        price: item.price,
-        description: item.description,
-        image: item.image,
-        category: item.category,
+        id: food.id,
+        name: food.name,
+        price: food.price,
+        description: food.description,
+        image: food.image,
+        category: food.category,
+        addons,
       })
     );
+    setShowAddonModal(false);
   };
 
   const handleIncrement = (id) => {
@@ -293,6 +305,7 @@ const MenuPage = () => {
                   <p className="text-gray-600 text-sm mb-4 line-clamp-2">
                     {item.description}
                   </p>
+                  <p className="text-green-700 font-semibold mb-2">₹{item.price}</p>
 
                   <div className="flex justify-between items-center">
                     <span className="text-xs px-2.5 py-1 bg-green-100 text-green-800 rounded-full">
@@ -320,10 +333,9 @@ const MenuPage = () => {
                     ) : (
                       <button
                         onClick={() => handleAddToCart(item)}
-                        className="flex items-center gap-1.5 bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg transition-colors"
+                        className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded"
                       >
-                        <FaShoppingCart size={14} />
-                        <span>Add</span>
+                        Add
                       </button>
                     )}
                   </div>
@@ -333,6 +345,13 @@ const MenuPage = () => {
           })}
         </div>
       </div>
+
+      <AddonSelector
+        foodId={selectedFoodId}
+        isOpen={showAddonModal}
+        onClose={() => setShowAddonModal(false)}
+        onConfirm={confirmAddons}
+      />
 
       <Footer />
     </div>

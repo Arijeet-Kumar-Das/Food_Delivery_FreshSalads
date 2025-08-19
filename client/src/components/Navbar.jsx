@@ -21,6 +21,7 @@ const Navbar = () => {
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -30,6 +31,7 @@ const Navbar = () => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
   const handleLogout = () => {
     dispatch(logout());
     navigate("/");
@@ -86,62 +88,70 @@ const Navbar = () => {
             </Link>
           </div>
 
-          {/* Right side - Icons */}
+          {/* Right side - Buttons/Icons */}
           <div className="flex items-center space-x-4">
-            <button className="p-2 text-gray-600 hover:text-green-600">
-              <FaSearch />
-            </button>
-
-            {isAuthenticated && (
-              <button
-                className="p-2 text-gray-600 hover:text-green-600"
-                onClick={() => navigate("/orders")}
-              >
-                <FaClipboardList />
-              </button>
-            )}
-
-            {isAuthenticated && (
-              <button
-                className="p-2 text-gray-600 hover:text-green-600"
-                onClick={() => navigate("/support")}
-              >
-                <FaLifeRing />
-              </button>
-            )}
-
+            {/* If user is logged in */}
             {isAuthenticated ? (
-              <div className="relative">
+              <>
                 <button
                   className="p-2 text-gray-600 hover:text-green-600"
-                  onClick={() => setDropdownOpen(!dropdownOpen)}
+                  onClick={() => navigate("/orders")}
                 >
-                  <FaUserCircle className="text-xl" />
+                  <FaClipboardList />
                 </button>
-                {dropdownOpen && (
-                  <div
-                    className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50"
-                    ref={dropdownRef}
+                <button
+                  className="p-2 text-gray-600 hover:text-green-600"
+                  onClick={() => navigate("/support")}
+                >
+                  <FaLifeRing />
+                </button>
+                <div className="relative">
+                  <button
+                    className="p-2 text-gray-600 hover:text-green-600"
+                    onClick={() => setDropdownOpen(!dropdownOpen)}
                   >
-                    <button
-                      onClick={handleLogout}
-                      className="w-full text-left px-4 py-2 text-gray-800 hover:bg-green-50 hover:text-green-600 flex items-center"
+                    <FaUserCircle className="text-xl" />
+                  </button>
+                  {dropdownOpen && (
+                    <div
+                      className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50"
+                      ref={dropdownRef}
                     >
-                      <FaSignOutAlt className="mr-2" /> Logout
-                    </button>
-                  </div>
-                )}
-              </div>
+                      <button
+                        onClick={handleLogout}
+                        className="w-full text-left px-4 py-2 text-gray-800 hover:bg-green-50 hover:text-green-600 flex items-center"
+                      >
+                        <FaSignOutAlt className="mr-2" /> Logout
+                      </button>
+                      <button
+                        onClick={() => navigate("/profile")}
+                        className="w-full text-left px-4 py-2 text-gray-800 hover:bg-green-50 hover:text-green-600 flex items-center"
+                      >
+                        <FaUser className="mr-2" /> Profile
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </>
             ) : (
-              <FaUser onClick={() => navigate("/login")} />
+              <>
+                {/* Show only when user is NOT signed in */}
+                <button
+                  className="px-5 py-1.5 bg-green-600 text-white rounded-lg shadow hover:bg-green-700 transition font-semibold"
+                  onClick={() => navigate("/register")}
+                  type="button"
+                >
+                  Sign Up
+                </button>
+                <button
+                  className="px-5 py-1.5 border-2 border-green-600 text-green-700 bg-white rounded-lg font-semibold shadow hover:bg-green-50 hover:text-green-800 transition"
+                  onClick={() => navigate("/choose-login")}
+                  type="button"
+                >
+                  Sign In
+                </button>
+              </>
             )}
-
-            <button className="relative p-2 text-gray-600 hover:text-green-600">
-              <FaShoppingCart />
-              <span className="absolute -top-1 -right-1 bg-green-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                3
-              </span>
-            </button>
           </div>
         </div>
       </div>

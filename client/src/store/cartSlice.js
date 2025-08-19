@@ -12,14 +12,19 @@ const cartSlice = createSlice({
   initialState,
   reducers: {
     addItem: (state, action) => {
-      const existingItem = state.items.find(
-        (item) => item.id === action.payload.id
-      );
+      const { id, addons = [] } = action.payload;
+      // Determine uniqueness by food id + sorted addon ids string
+      const key = `${id}-${addons
+        .map((a) => a.id)
+        .sort()
+        .join("-")}`;
+
+      const existingItem = state.items.find((item) => item.key === key);
 
       if (existingItem) {
         existingItem.quantity += 1;
       } else {
-        state.items.push({ ...action.payload, quantity: 1 });
+        state.items.push({ ...action.payload, quantity: 1, addons, key });
       }
     },
     removeItem: (state, action) => {
@@ -65,7 +70,14 @@ export const selectCartItems = (state) => state.cart.items;
 export const selectCartCount = (state) =>
   state.cart.items.reduce((count, item) => count + item.quantity, 0);
 export const selectSubtotal = (state) =>
-  state.cart.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  state.cart.items.reduce((sum, item) => {
+    const base = item.price * item.quantity;
+    const addonTotal = (item.addons || []).reduce(
+      (acc, ad) => acc + ad.price * item.quantity,
+      0
+    );
+    return sum + base + addonTotal;
+  }, 0);
 export const selectDeliveryFee = (state) =>
   selectSubtotal(state) > 1000 ? 0 : 40;
 export const selectTax = (state) => selectSubtotal(state) * 0.05;

@@ -11,6 +11,7 @@ import {
 } from "react-icons/fa";
 import { useSelector, useDispatch } from "react-redux";
 import { logout } from "../store/authSlice";
+import { clearCart } from "../store/cartSlice";
 import { useNavigate, Link } from "react-router-dom";
 import { selectCartCount } from "../store/cartSlice"; // Import the selector
 
@@ -30,6 +31,7 @@ const Navbar2 = () => {
   };
 
   const handleLogout = () => {
+    dispatch(clearCart());
     dispatch(logout());
     navigate("/");
   };
@@ -51,13 +53,6 @@ const Navbar2 = () => {
 
           {/* Right side icons */}
           <div className="flex items-center space-x-4">
-            <button
-              className="p-2 text-gray-600 hover:text-green-600"
-              onClick={() => console.log("Search clicked")}
-            >
-              <FaSearch />
-            </button>
-
             {isAuthenticated && (
               <>
                 <button
@@ -93,6 +88,12 @@ const Navbar2 = () => {
                       className="w-full text-left px-4 py-2 text-gray-800 hover:bg-green-50 hover:text-green-600 flex items-center"
                     >
                       <FaSignOutAlt className="mr-2" /> Logout
+                    </button>
+                    <button
+                      onClick={() => navigate("/profile")}
+                      className="w-full text-left px-4 py-2 text-gray-800 hover:bg-green-50 hover:text-green-600 flex items-center"
+                    >
+                      <FaUser className="mr-2" /> Profile
                     </button>
                   </div>
                 )}

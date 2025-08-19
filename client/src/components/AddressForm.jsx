@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
+import { GoogleMap, Marker, useJsApiLoader, Autocomplete } from "@react-google-maps/api";
 import { motion } from "framer-motion";
 import {
   FaHome,
@@ -9,8 +10,11 @@ import {
   FaInfoCircle,
 } from "react-icons/fa";
 import API from "../utils/api";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { useNavigate, useLocation } from "react-router-dom";
+import { setDefaultAddress } from "../store/authSlice";
+
+const containerStyle = { width: "100%", height: "240px" };
 
 const AddressForm = ({ onSuccess, initialAddress }) => {
   const location = useLocation();
@@ -19,16 +23,25 @@ const AddressForm = ({ onSuccess, initialAddress }) => {
   const postRegMessage =
     location.state?.message || "Please add your delivery address to continue";
 
-  // Get token from Redux store
+  // Get token and user from Redux store
   const { token } = useSelector((state) => state.auth);
+  const dispatch = useDispatch();
 
   const [formData, setFormData] = useState({
     title: initialAddress?.title || "Home",
     details: initialAddress?.details || "",
     isDefault: initialAddress?.isDefault || !initialAddress,
+    latitude: initialAddress?.latitude || null,
+    longitude: initialAddress?.longitude || null,
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { isLoaded } = useJsApiLoader({
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
+    libraries: ["places"],
+  });
+  const [mapCenter, setMapCenter] = useState({ lat: 22.5726, lng: 88.3639 }); // default Kolkata
+  const [autocomplete, setAutocomplete] = useState(null);
   const [error, setError] = useState("");
 
   // In your handleSubmit function
@@ -48,12 +61,31 @@ const AddressForm = ({ onSuccess, initialAddress }) => {
         ...formData,
         // Ensure we send isDefault as is_default for the backend
         is_default: formData.isDefault,
+        latitude: formData.latitude,
+        longitude: formData.longitude,
       };
 
+      let response;
       if (initialAddress) {
-        await API.put(`/addresses/${initialAddress.id}`, payload, config);
+        response = await API.put(`/addresses/${initialAddress.id}`, payload, config);
       } else {
-        await API.post("/addresses", payload, config);
+        response = await API.post("/addresses", payload, config);
+        // If this is a new address and it's set as default, update the global state
+        let updatedDefaultId = null;
+        if (formData.isDefault && response) {
+          updatedDefaultId = response.data?.id || response.data?.address?.id || null;
+        }
+        // Fallback: fetch addresses list to reliably get the current default
+        if (!updatedDefaultId) {
+          try {
+            const { data: addrList } = await API.get("/addresses", config);
+            const def = addrList.find((a) => a.isDefault || a.is_default);
+            if (def) updatedDefaultId = def.id;
+          } catch {}
+        }
+        if (updatedDefaultId) {
+          dispatch(setDefaultAddress(updatedDefaultId));
+        }
       }
 
       if (isPostRegistration) {
@@ -124,6 +156,41 @@ const AddressForm = ({ onSuccess, initialAddress }) => {
             ))}
           </div>
         </div>
+
+        {/* Map Search */}
+        {isLoaded && (
+          <div className="space-y-2">
+            <label className="block text-gray-700 mb-1">Search Address</label>
+            <Autocomplete onLoad={setAutocomplete} onPlaceChanged={() => {
+              const place = autocomplete.getPlace();
+              if (!place.geometry) return;
+              const loc = place.geometry.location;
+              const lat = loc.lat();
+              const lng = loc.lng();
+              setMapCenter({ lat, lng });
+              setFormData({ ...formData, details: place.formatted_address, latitude: lat, longitude: lng });
+            }}>
+              <input type="text" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none" placeholder="Search your address" />
+            </Autocomplete>
+            <GoogleMap
+              mapContainerStyle={containerStyle}
+              center={mapCenter}
+              zoom={15}
+              onClick={(e)=>{
+                const lat = e.latLng.lat();
+                const lng = e.latLng.lng();
+                setFormData({ ...formData, latitude: lat, longitude: lng });
+                setMapCenter({ lat, lng });
+              }}
+            >
+              {formData.latitude && <Marker position={{ lat: formData.latitude, lng: formData.longitude }} draggable onDragEnd={(e)=>{
+                const lat=e.latLng.lat();
+                const lng=e.latLng.lng();
+                setFormData({ ...formData, latitude: lat, longitude: lng });
+              }}/>}
+            </GoogleMap>
+          </div>
+        )}
 
         {/* Address Details */}
         <div>

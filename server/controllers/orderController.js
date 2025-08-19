@@ -2,6 +2,7 @@ const pool = require("../config/db");
 const { v4: uuidv4 } = require("uuid");
 const Razorpay = require("razorpay");
 const crypto = require("crypto");
+const { assignDeliveryPartnerToOrder } = require("../services/deliveryPartnerService");
 
 // Initialize Razorpay instance
 const razorpay = new Razorpay({
@@ -85,6 +86,9 @@ exports.verifyPayment = async (req, res) => {
         ["confirmed", razorpay_payment_id, "completed", order_id]
       );
 
+      // Auto-assign a delivery partner now that payment is successful
+      await assignDeliveryPartnerToOrder(connection, order_id);
+
       await connection.commit();
 
       res.json({
@@ -136,11 +140,31 @@ exports.createOrder = async (req, res) => {
     let total = 0;
     const foodPrices = await getFoodPrices(connection, items);
 
+    // Collect unique addon ids and fetch their prices
+    const uniqueAddonIds = [
+      ...new Set(
+        items.flatMap((it) => (Array.isArray(it.addons) ? it.addons.map((a) => a.id) : []))
+      ),
+    ];
+    const addonPrices = await getAddonPrices(connection, uniqueAddonIds);
+
     items.forEach((item) => {
       if (!foodPrices[item.food_id]) {
         throw new Error(`Invalid food_id: ${item.food_id}`);
       }
-      total += foodPrices[item.food_id] * item.quantity;
+
+      const addonsArr = Array.isArray(item.addons) ? item.addons : [];
+
+      // Validate addons & compute addon total
+      let addonTotal = 0;
+      for (const ad of addonsArr) {
+        if (!addonPrices[ad.id]) {
+          throw new Error(`Invalid addon_id: ${ad.id}`);
+        }
+        addonTotal += addonPrices[ad.id];
+      }
+
+      total += (foodPrices[item.food_id] + addonTotal) * item.quantity;
     });
 
     // Create order with status 'pending' and payment_status 'pending'
@@ -152,10 +176,30 @@ exports.createOrder = async (req, res) => {
 
     // Add order items
     for (const item of items) {
-      await connection.query(
+      const addonsArr = Array.isArray(item.addons) ? item.addons : [];
+
+      // Validate addons & compute addon total
+      let addonTotal = 0;
+      for (const ad of addonsArr) {
+        if (!addonPrices[ad.id]) {
+          throw new Error(`Invalid addon_id: ${ad.id}`);
+        }
+        addonTotal += addonPrices[ad.id];
+      }
+
+      const [oiResult] = await connection.query(
         "INSERT INTO order_items (order_id, food_id, quantity, price_at_order) VALUES (?, ?, ?, ?)",
         [orderId, item.food_id, item.quantity, foodPrices[item.food_id]]
       );
+      const orderItemId = oiResult.insertId;
+
+      // Insert chosen addons for this item
+      for (const ad of addonsArr) {
+        await connection.query(
+          "INSERT INTO order_item_addons (order_item_id, addon_id, price) VALUES (?, ?, ?)",
+          [orderItemId, ad.id, addonPrices[ad.id]]
+        );
+      }
     }
 
     await connection.commit();
@@ -172,6 +216,33 @@ exports.createOrder = async (req, res) => {
     connection.release();
   }
 };
+
+// Helper function to get current food prices
+async function getFoodPrices(connection, items) {
+  const foodIds = items.map((item) => item.food_id);
+  const [foods] = await connection.query(
+    "SELECT id, price FROM foods WHERE id IN (?)",
+    [foodIds]
+  );
+
+  return foods.reduce((acc, food) => {
+    acc[food.id] = Number(food.price);
+    return acc;
+  }, {});
+}
+
+// Helper function to get addon prices (and validate their existence)
+async function getAddonPrices(connection, addonIds) {
+  if (addonIds.length === 0) return {};
+  const [addons] = await connection.query(
+    "SELECT id, price FROM addons WHERE id IN (?) AND is_active = 1",
+    [addonIds]
+  );
+  return addons.reduce((acc, addon) => {
+    acc[addon.id] = Number(addon.price);
+    return acc;
+  }, {});
+}
 
 // Get payment details (New function)
 exports.getPaymentDetails = async (req, res) => {
@@ -218,20 +289,6 @@ exports.updateOrderStatus = async (req, res) => {
   }
 };
 
-// Helper function to get current food prices
-async function getFoodPrices(connection, items) {
-  const foodIds = items.map((item) => item.food_id);
-  const [foods] = await connection.query(
-    "SELECT id, price FROM foods WHERE id IN (?)",
-    [foodIds]
-  );
-
-  return foods.reduce((acc, food) => {
-    acc[food.id] = food.price;
-    return acc;
-  }, {});
-}
-
 // Get user orders (keeping your existing function)
 exports.getUserOrders = async (req, res) => {
   try {
@@ -263,14 +320,33 @@ exports.getOrderDetails = async (req, res) => {
 
     // Get order items with food details
     const [items] = await pool.query(
-      `
-      SELECT oi.*, f.name as food_name, f.image_url 
-      FROM order_items oi
-      JOIN foods f ON oi.food_id = f.id
-      WHERE oi.order_id = ?
-    `,
+      `SELECT oi.*, f.name as food_name, f.image_url \
+       FROM order_items oi \
+       JOIN foods f ON oi.food_id = f.id \
+       WHERE oi.order_id = ?`,
       [orderId]
     );
+
+    if (items.length) {
+      const orderItemIds = items.map((it) => it.id);
+      const [addonRows] = await pool.query(
+        `SELECT oia.order_item_id, a.name, oia.price \
+         FROM order_item_addons oia \
+         JOIN addons a ON a.id = oia.addon_id \
+         WHERE oia.order_item_id IN (?)`,
+        [orderItemIds]
+      );
+      // group addons by order_item_id
+      const addonsByItem = {};
+      addonRows.forEach((row) => {
+        if (!addonsByItem[row.order_item_id]) addonsByItem[row.order_item_id] = [];
+        addonsByItem[row.order_item_id].push({ name: row.name, price: row.price });
+      });
+      // attach to items
+      items.forEach((it) => {
+        it.addons = addonsByItem[it.id] || [];
+      });
+    }
 
     res.json({ ...order[0], items });
   } catch (err) {

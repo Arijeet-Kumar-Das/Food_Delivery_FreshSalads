@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Element } from "react-scroll";
 import { motion } from "framer-motion";
 import Navbar from "../components/Navbar";
@@ -12,43 +12,76 @@ import {
   FaUtensils,
 } from "react-icons/fa";
 import Home from "../assets/home.avif";
-import img1 from "../assets/h-food-1.jpg";
-import img2 from "../assets/h-food-2.jpg";
-import img3 from "../assets/h-food-3.jpg";
-import img4 from "../assets/h-food-4.jpg";
+
 import Footer from "../components/Footer";
+import { useSelector, useDispatch } from "react-redux";
+import { addItem } from "../store/cartSlice";
+import { selectIsAuthenticated } from "../store/authSlice";
+import { useNavigate } from "react-router-dom";
+import api from "../utils/api";
 
 const HomePage = () => {
-  const salads = [
-    {
-      name: "Mix Salad",
-      description: "Fresh seasonal vegetables with house dressing",
-      price: 200.0,
-      image: img1,
-      rating: 4.8,
-    },
-    {
-      name: "Greek Salad",
-      description: "Spicy with garlic and feta cheese",
-      price: 220.0,
-      image: img2,
-      rating: 4.9,
-    },
-    {
-      name: "Green Salad",
-      description: "Tomato, cucumber & fresh veggies",
-      price: 250.0,
-      image: img3,
-      rating: 4.5,
-    },
-    {
-      name: "Avocado Salad",
-      description: "Creamy avocado and crisp cucumber",
-      price: 150.0,
-      image: img4,
-      rating: 4.7,
-    },
-  ];
+  const [topFoods, setTopFoods] = useState([]);
+  const [chefPick, setChefPick] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const isAuthenticated = useSelector(selectIsAuthenticated);
+
+  useEffect(() => {
+    const fetchFoods = async () => {
+      try {
+        const res = await api.get("/foods");
+        const foodsData = Array.isArray(res.data) ? res.data : res.data?.data || [];
+        const processed = foodsData.map((food) => ({
+          id: food.id,
+          name: food.name,
+          description: food.description,
+          price: Number(food.price),
+          rating: Number(food.rating_average) || 0,
+          image: `/assets/${food.image_url}`,
+        }));
+        processed.sort((a, b) => b.rating - a.rating);
+        setTopFoods(processed.slice(0, 4));
+        setChefPick(processed[0] || null);
+      } catch (err) {
+        setError(err.message || "Failed to load food items");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchFoods();
+  }, []);
+
+  const handleAddToCart = (item) => {
+    if (!isAuthenticated) {
+      navigate("/login");
+      return;
+    }
+    dispatch(addItem(item));
+    navigate("/menu");
+  };
+
+
+
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-green-500"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="text-red-500">{error}</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -100,18 +133,18 @@ const HomePage = () => {
                           <span>5.0</span>
                         </div>
                       </div>
-                      <h3 className="text-3xl font-bold mb-2">
-                        Mediterranean Power Bowl
-                      </h3>
-                      <p className="text-green-200 font-medium mb-4">
-                        Today's featured creation with quinoa, kale, and roasted
-                        veggies
-                      </p>
+                      {chefPick && (
+                        <>
+                          <h3 className="text-3xl font-bold mb-2">{chefPick.name}</h3>
+                          <p className="text-green-200 font-medium mb-4 line-clamp-2">{chefPick.description}</p>
+                        </>
+                      )}
                       <div className="flex justify-between items-center">
-                        <span className="text-2xl font-bold">Rs 299</span>
+                        <span className="text-2xl font-bold">Rs {chefPick ? Number(chefPick.price).toLocaleString("en-IN", {minimumFractionDigits: 2}) : ""}</span>
                         <motion.button
                           whileHover={{ scale: 1.05 }}
                           whileTap={{ scale: 0.95 }}
+                          onClick={() => navigate('/menu')}
                           className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-full flex items-center gap-2"
                         >
                           Order Now <FaArrowDown className="text-xs" />
@@ -126,7 +159,7 @@ const HomePage = () => {
             {/* Right Section - Optimized Menu Cards */}
             <Element name="menu" className="lg:w-[55%]">
               <div className="grid grid-cols-1 gap-5 h-full">
-                {salads.map((salad, index) => (
+                {topFoods.map((salad, index) => (
                   <motion.div
                     key={index}
                     initial={{ opacity: 0, x: 20 }}
@@ -164,9 +197,10 @@ const HomePage = () => {
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-lg font-bold text-green-600">
-                          Rs. {salad.price.toFixed(2)}
+                          Rs. {Number(salad.price).toLocaleString("en-IN", {minimumFractionDigits: 2})}
                         </span>
                         <motion.button
+                          onClick={() => handleAddToCart(salad)}
                           whileHover={{ scale: 1.05 }}
                           whileTap={{ scale: 0.95 }}
                           className="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg text-sm transition-colors duration-300"

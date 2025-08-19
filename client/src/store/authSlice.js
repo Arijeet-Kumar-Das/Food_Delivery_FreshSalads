@@ -2,7 +2,7 @@
 import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
-  user: null,
+  user: JSON.parse(localStorage.getItem("user")) || null,
   token: localStorage.getItem("token") || null,
   isAuthenticated: !!localStorage.getItem("token"),
   isAdmin: false,
@@ -20,8 +20,10 @@ const authSlice = createSlice({
         id: user.id,
         name: user.name,
         email: user.email,
-        defaultAddressId: user.defaultAddressId, // Added from login response
+        defaultAddressId: user.defaultAddressId,
       };
+      // Persist user in localStorage so it survives page reloads
+      localStorage.setItem("user", JSON.stringify(state.user));
       state.token = token;
       state.isAuthenticated = true;
       state.isAdmin = !!user.isAdmin;
@@ -35,10 +37,13 @@ const authSlice = createSlice({
       state.isAdmin = false;
       state.status = "idle";
       localStorage.removeItem("token");
+      localStorage.removeItem("user");
     },
     setDefaultAddress: (state, action) => {
       if (state.user) {
         state.user.defaultAddressId = action.payload;
+        // Update persisted user
+        localStorage.setItem("user", JSON.stringify(state.user));
       }
     },
   },

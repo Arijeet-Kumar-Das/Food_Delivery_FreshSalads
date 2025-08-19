@@ -6,6 +6,7 @@ import {
   FaHamburger,
   FaTags,
   FaUsers,
+  FaMotorcycle,
   FaClipboardList,
 } from "react-icons/fa";
 import Navbar2 from "../components/Navbar2";
@@ -15,6 +16,7 @@ import AdminFoods from "./admin/AdminFoods";
 import AdminCategories from "./admin/AdminCategories";
 import AdminUsers from "./admin/AdminUsers";
 import AdminSupport from "./admin/AdminSupport";
+import AdminDeliveryPartners from "./admin/AdminDeliveryPartners";
 
 const SidebarItem = ({ to, icon: Icon, label }) => (
   <Link
@@ -31,7 +33,7 @@ const SidebarItem = ({ to, icon: Icon, label }) => (
 const AdminLayout = () => (
   <div className="flex min-h-screen bg-green-50">
     {/* Sidebar */}
-    <aside className="w-64 bg-white shadow-lg p-4 flex flex-col">
+    <aside className="w-64 fixed inset-y-0 bg-white shadow-lg p-4 flex flex-col z-40">
       <div className="flex items-center space-x-2 text-green-700 text-2xl font-bold mb-8">
         <FaLeaf /> <span>Admin</span>
       </div>
@@ -40,11 +42,12 @@ const AdminLayout = () => (
       <SidebarItem to="/admin/foods" icon={FaHamburger} label="Foods" />
       <SidebarItem to="/admin/categories" icon={FaTags} label="Categories" />
       <SidebarItem to="/admin/users" icon={FaUsers} label="Users" />
+      <SidebarItem to="/admin/delivery-partners" icon={FaMotorcycle} label="Delivery Partners" />
       <SidebarItem to="/admin/support" icon={FaTags} label="Support" />
     </aside>
 
     {/* Content */}
-    <main className="flex-1 flex flex-col">
+    <main className="flex-1 flex flex-col ml-64 min-h-screen">
       <Navbar2 />
       <div className="flex-1 overflow-y-auto">
         <Outlet />
@@ -61,6 +64,7 @@ export const AdminDashboardRoutes = () => (
       <Route path="foods" element={<AdminFoods />} />
       <Route path="categories" element={<AdminCategories />} />
       <Route path="users" element={<AdminUsers />} />
+      <Route path="delivery-partners" element={<AdminDeliveryPartners />} />
       <Route path="support" element={<AdminSupport />} />
     </Route>
   </Routes>

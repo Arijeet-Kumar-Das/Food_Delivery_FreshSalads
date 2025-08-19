@@ -3,7 +3,7 @@ const pool = require("../config/db");
 // In your addAddress controller
 exports.addAddress = async (req, res) => {
   try {
-    const { title, details, is_default } = req.body;
+    const { title, details, is_default, latitude, longitude } = req.body;
     const userId = req.user.userId;
 
     // If this is being set as default, first reset any existing defaults
@@ -16,9 +16,9 @@ exports.addAddress = async (req, res) => {
 
     // Insert new address
     await pool.query(
-      `INSERT INTO addresses (user_id, title, details, is_default) 
-       VALUES (?, ?, ?, ?)`,
-      [userId, title || "Home", details, is_default || false]
+      `INSERT INTO addresses (user_id, title, details, latitude, longitude, is_default) 
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [userId, title || "Home", details, latitude || null, longitude || null, is_default || false]
     );
 
     res.status(201).json({ message: "Address added successfully" });
@@ -93,7 +93,7 @@ exports.updateAddress = async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.user.userId;
-    const { title, details, is_default } = req.body;
+    const { title, details, is_default, latitude, longitude } = req.body;
 
     // 1. Check if address exists and belongs to the user
     const [address] = await pool.query(
@@ -116,11 +116,13 @@ exports.updateAddress = async (req, res) => {
     // 3. Update the address
     await pool.query(
       `UPDATE addresses 
-       SET title = ?, details = ?, is_default = ?
+       SET title = ?, details = ?, latitude = ?, longitude = ?, is_default = ?
        WHERE id = ? AND user_id = ?`,
       [
         title || address[0].title, // Keep existing title if not provided
         details || address[0].details, // Keep existing details if not provided
+        latitude !== undefined ? latitude : address[0].latitude,
+        longitude !== undefined ? longitude : address[0].longitude,
         is_default !== undefined ? is_default : address[0].is_default, // Handle undefined is_default
         id,
         userId,

@@ -14,6 +14,8 @@ const STATUS_OPTIONS = ["pending", "confirmed", "delivered", "cancelled"];
 const AdminOrders = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -28,6 +30,16 @@ const AdminOrders = () => {
     };
     load();
   }, []);
+
+  const viewOrder = async (id) => {
+    try {
+      const { data } = await API.get(`/orders/${id}`);
+      setSelectedOrder(data);
+      setShowModal(true);
+    } catch {
+      toast.error("Failed to load order");
+    }
+  };
 
   const updateStatus = async (id, status) => {
     try {
@@ -68,6 +80,7 @@ const AdminOrders = () => {
               <th className="py-4 px-6 text-left font-semibold">Total</th>
               <th className="py-4 px-6 text-left font-semibold">Status</th>
               <th className="py-4 px-6 text-left font-semibold">Update</th>
+              <th className="py-4 px-6 text-left font-semibold">View</th>
             </tr>
           </thead>
           <tbody>
@@ -113,11 +126,49 @@ const AdminOrders = () => {
                     ))}
                   </select>
                 </td>
+                <td className="py-4 px-6">
+                  <button onClick={() => viewOrder(o.id)} className="text-green-600 hover:underline">Details</button>
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+      {/* Modal */}
+      {showModal && selectedOrder && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white w-full max-w-lg rounded-xl shadow-2xl p-6 relative">
+            <button
+              className="absolute top-3 right-3 text-gray-500 hover:text-gray-700"
+              onClick={() => setShowModal(false)}
+            >
+              ✕
+            </button>
+            <h3 className="text-xl font-bold mb-4">Order #{selectedOrder.id}</h3>
+            <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
+              {selectedOrder.items.map((it) => (
+                <div key={it.id} className="border rounded-lg p-3 bg-gray-50">
+                  <div className="flex justify-between mb-1 text-sm font-medium">
+                    <span>{it.food_name}</span>
+                    <span>Qty: {it.quantity}</span>
+                  </div>
+                  {it.addons && it.addons.length > 0 && (
+                    <ul className="text-xs text-gray-600 list-disc ml-4 space-y-0.5">
+                      {it.addons.map((ad, idx) => (
+                        <li key={idx}>{ad.name} (+₹{ad.price})</li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 text-right font-semibold text-green-700">
+              Total: ₹{Number(selectedOrder.total_amount).toFixed(2)}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
